@@ -1,0 +1,13 @@
+# Virtual environment
+.venv/
+venv/
+
+# Secrets (never push)
+.streamlit/secrets.toml
+
+# Cache
+__pycache__/
+*.db
+*.sqlite
+*.pyc
+*.pyo
