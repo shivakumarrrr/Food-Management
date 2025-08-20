@@ -1,0 +1,9 @@
+[database]
+# SQLite (local file):
+#url = "sqlite:///food.db"
+
+# MySQL example:
+url = "mysql+pymysql://root:Shivapspk123@localhost:3306/food_waste?charset=utf8mb4"
+
+# Postgres example:
+# url = "postgresql+psycopg2://USER:PASS@HOST:5432/DBNAME"

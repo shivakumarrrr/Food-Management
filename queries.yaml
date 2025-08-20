@@ -1,0 +1,127 @@
+# 1. Top cities by number of providers
+top_cities: |
+  SELECT city, COUNT(*) AS providers
+  FROM providers
+  GROUP BY city
+  ORDER BY providers DESC;
+
+# 2. Providers by food type
+providers_by_food: |
+  SELECT food_type, COUNT(*) AS total_providers
+  FROM providers
+  GROUP BY food_type
+  ORDER BY total_providers DESC;
+
+# 3. Providers by meal type
+providers_by_meal: |
+  SELECT meal_type, COUNT(*) AS total_providers
+  FROM providers
+  GROUP BY meal_type
+  ORDER BY total_providers DESC;
+
+# 4. Seekers by city
+seekers_by_city: |
+  SELECT city, COUNT(*) AS seekers
+  FROM seekers
+  GROUP BY city
+  ORDER BY seekers DESC;
+
+# 5. Filtered providers (with sidebar filters)
+filtered_providers: |
+  SELECT id, name, city, food_type, meal_type, contact_phone, contact_email
+  FROM providers
+  WHERE (:city IS NULL OR city = :city)
+    AND (:provider IS NULL OR name = :provider)
+    AND (:food_type IS NULL OR food_type = :food_type)
+    AND (:meal_type IS NULL OR meal_type = :meal_type)
+  ORDER BY name;
+
+# 6. Request fulfilment rate by city
+request_fulfilment_rate: |
+  SELECT p.city,
+         COUNT(r.id) AS total_requests,
+         SUM(CASE WHEN r.fulfilled = 1 THEN 1 ELSE 0 END) AS fulfilled,
+         ROUND(100.0 * SUM(CASE WHEN r.fulfilled = 1 THEN 1 ELSE 0 END) / NULLIF(COUNT(r.id), 0), 2) AS fulfillment_pct
+  FROM requests r
+  JOIN providers p ON r.provider_id = p.id
+  GROUP BY p.city
+  ORDER BY fulfillment_pct DESC;
+
+# 7. Average response time by city (in minutes)
+avg_response_time_by_city: |
+  SELECT p.city,
+         AVG(TIMESTAMPDIFF(MINUTE, r.created_at, r.first_response_at)) AS avg_minutes
+  FROM requests r
+  JOIN providers p ON r.provider_id = p.id
+  WHERE r.first_response_at IS NOT NULL
+  GROUP BY p.city
+  ORDER BY avg_minutes;
+
+# 8. Daily request trend
+daily_request_trend: |
+  SELECT DATE(r.created_at) AS day, COUNT(*) AS requests
+  FROM requests r
+  GROUP BY day
+  ORDER BY day;
+
+# 9. Provider load (open requests)
+provider_load: |
+  SELECT p.id, p.name, COUNT(r.id) AS open_requests
+  FROM providers p
+  LEFT JOIN requests r ON r.provider_id = p.id AND r.fulfilled = 0
+  GROUP BY p.id, p.name
+  ORDER BY open_requests DESC;
+
+# 10. Popular food type and city combinations
+popular_food_city_combo: |
+  SELECT city, food_type, COUNT(*) AS count
+  FROM providers
+  GROUP BY city, food_type
+  ORDER BY count DESC
+  LIMIT 25;
+
+# 11. Seekers' needs by meal type
+seekers_need_by_meal: |
+  SELECT meal_type, COUNT(*) AS needed
+  FROM seekers
+  GROUP BY meal_type
+  ORDER BY needed DESC;
+
+# 12. Conversion time buckets for fulfilled requests
+conversion_time_buckets: |
+  SELECT
+    CASE
+      WHEN TIMESTAMPDIFF(HOUR, r.created_at, r.fulfilled_at) < 1 THEN '<1h'
+      WHEN TIMESTAMPDIFF(HOUR, r.created_at, r.fulfilled_at) < 6 THEN '1–6h'
+      WHEN TIMESTAMPDIFF(HOUR, r.created_at, r.fulfilled_at) < 24 THEN '6–24h'
+      ELSE '24h+'
+    END AS bucket,
+    COUNT(*) AS requests
+  FROM requests r
+  WHERE r.fulfilled = 1
+  GROUP BY bucket
+  ORDER BY requests DESC;
+
+# 13. Active providers (last 30 days)
+active_providers: |
+  SELECT p.id, p.name, COUNT(r.id) AS recent_requests
+  FROM providers p
+  JOIN requests r ON r.provider_id = p.id
+  WHERE r.created_at >= NOW() - INTERVAL 30 DAY
+  GROUP BY p.id, p.name
+  ORDER BY recent_requests DESC;
+
+# 14. Inactive providers (no requests in 60 days)
+inactive_providers: |
+  SELECT p.id, p.name
+  FROM providers p
+  LEFT JOIN requests r ON r.provider_id = p.id AND r.created_at >= NOW() - INTERVAL 60 DAY
+  WHERE r.id IS NULL
+  ORDER BY p.name;
+
+# 15. Average party size requested by city
+avg_party_size_by_city: |
+  SELECT city, ROUND(AVG(party_size), 2) AS avg_party_size
+  FROM seekers
+  GROUP BY city
+  ORDER BY avg_party_size DESC;

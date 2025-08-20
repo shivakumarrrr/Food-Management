@@ -1,0 +1,9 @@
+streamlit>=1.36
+pandas>=2.0
+sqlalchemy>=2.0
+pymysql>=1.1     # if using MySQL/MariaDB
+psycopg2-binary  # if using Postgres (optional)
+pyyaml
+altair>=5
+joblib
+tomli; python_version<"3.11"
